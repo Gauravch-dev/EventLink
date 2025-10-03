@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1071338456596",
+    "project_id": "eventlink-2545a",
+    "storage_bucket": "eventlink-2545a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1071338456596:android:dcfaa5975125a120fd8901",
+        "android_client_info": {
+          "package_name": "com.example.eventlink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDbA-BNlMTF2vqV9UaU0bKNueDJrt3MwE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
