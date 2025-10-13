@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
                     });
         });
 
+
         forgotPassword.setOnClickListener(view -> {
             String emailText = email.getText().toString().trim();
 
