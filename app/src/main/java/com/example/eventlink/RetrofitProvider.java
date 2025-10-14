@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitProvider {
     // Physical phone -> laptop IP (same Wi-Fi)
-    private static final String BASE_URL = "http://192.168.0.104:8000/"; // <- confirm this IP
+    private static final String BASE_URL = "http://10.195.150.220:8000/"; // <- confirm this IP
 
     private static BotService api;
 
