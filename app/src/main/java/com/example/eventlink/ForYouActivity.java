@@ -22,74 +22,65 @@ import java.util.ArrayList;
 
 public class ForYouActivity extends AppCompatActivity {
 
-    DrawerLayout drawerLayout;
-    NavigationView navigationView;
-    Toolbar toolbar;
-    FirebaseFirestore db;
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private Toolbar toolbar;
+    private FirebaseFirestore db;
+    private String userId;
+    private String userEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // ✅ set content view ONCE
         setContentView(R.layout.activity_for_you);
 
-        // ===== Drawer / Toolbar wiring =====
+        // ===== Setup Toolbar & Drawer =====
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this,
-                drawerLayout,
-                toolbar,
+                this, drawerLayout, toolbar,
                 R.string.navigation_drawer_open,
                 R.string.navigation_drawer_close
         );
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // ===== Open Chat button =====
-        Button openChatBtn = findViewById(R.id.openChatBtn);
-        if (openChatBtn != null) {
-            openChatBtn.setOnClickListener(v -> {
-                try {
-                    startActivity(new Intent(ForYouActivity.this, ChatActivity.class));
-                } catch (Exception e) {
-                    Toast.makeText(this, "Failed to open chat: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            });
-        } else {
-            // If null, the button is not in activity_for_you.xml or is in another layout
-            Toast.makeText(this, "openChatBtn not found in activity_for_you.xml", Toast.LENGTH_LONG).show();
-        }
+        // ===== Get user info from Intent =====
+        userId = getIntent().getStringExtra("userId");
+        userEmail = getIntent().getStringExtra("userEmail");
 
-        // ===== Firestore user header (safe guards) =====
-        String userEmail = getIntent().getStringExtra("userEmail");
         db = FirebaseFirestore.getInstance();
 
-        if (userEmail != null) {
-            db.collection("users").document(userEmail).get()
+        // ===== Load user data using UID =====
+        if (userId != null) {
+            db.collection("users").document(userId).get()
                     .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists() && navigationView != null && navigationView.getHeaderCount() > 0) {
+                        if (documentSnapshot.exists()) {
                             String userName = documentSnapshot.getString("name");
                             String email = documentSnapshot.getString("email");
 
-                            View headerView = navigationView.getHeaderView(0);
-                            if (headerView != null) {
+                            if (navigationView != null && navigationView.getHeaderCount() > 0) {
+                                View headerView = navigationView.getHeaderView(0);
                                 TextView navName = headerView.findViewById(R.id.nav_header_name);
                                 TextView navEmail = headerView.findViewById(R.id.nav_header_email);
-                                if (navName != null)  navName.setText(userName);
+                                if (navName != null) navName.setText(userName);
                                 if (navEmail != null) navEmail.setText(email);
                             }
+                        } else {
+                            Toast.makeText(this, "User data not found!", Toast.LENGTH_SHORT).show();
                         }
                     })
                     .addOnFailureListener(e ->
-                            Toast.makeText(this, "Error fetching user data: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, "Error fetching user: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                     );
+        } else {
+            Toast.makeText(this, "User not logged in properly", Toast.LENGTH_SHORT).show();
         }
 
-        // ===== Image slider =====
+        // ===== Image Slider =====
         ImageSlider imageSlider = findViewById(R.id.imageSlider);
         if (imageSlider != null) {
             ArrayList<SlideModel> slideModels = new ArrayList<>();
@@ -99,14 +90,33 @@ public class ForYouActivity extends AppCompatActivity {
             slideModels.add(new SlideModel(R.drawable.iot, ScaleTypes.FIT));
             imageSlider.setImageList(slideModels, ScaleTypes.FIT);
 
-            imageSlider.setItemClickListener(position ->
-                    startActivity(new Intent(ForYouActivity.this, EventDescActivity.class))
-            );
+            // On image click -> go to EventDescActivity with UID and email
+            imageSlider.setItemClickListener(position -> {
+                Intent intent = new Intent(ForYouActivity.this, EventDescActivity.class);
+                intent.putExtra("userId", userId);
+                intent.putExtra("userEmail", userEmail);
+                startActivity(intent);
+            });
+        }
+
+        // ===== Open Chat button =====
+        Button openChatBtn = findViewById(R.id.openChatBtn);
+        if (openChatBtn != null) {
+            openChatBtn.setOnClickListener(v -> {
+                Intent chatIntent = new Intent(ForYouActivity.this, ChatActivity.class);
+                chatIntent.putExtra("userId", userId);
+                chatIntent.putExtra("userEmail", userEmail);
+                startActivity(chatIntent);
+            });
+        } else {
+            Toast.makeText(this, "Chat button not found in layout", Toast.LENGTH_SHORT).show();
         }
     }
 
     public void onCreateEventClick(View view) {
         Intent intent = new Intent(ForYouActivity.this, CreateEventActivity.class);
+        intent.putExtra("userId", userId);
+        intent.putExtra("userEmail", userEmail);
         startActivity(intent);
     }
 }

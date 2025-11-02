@@ -11,13 +11,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
-    EditText email, password;
-    AppCompatButton btnLogin;
-    TextView forgotPassword;
 
-    FirebaseAuth mAuth;
+    private EditText email, password;
+    private AppCompatButton btnLogin;
+    private TextView forgotPassword;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
+        // Login button click
         btnLogin.setOnClickListener(view -> {
             String emailText = email.getText().toString().trim();
             String passwordText = password.getText().toString().trim();
@@ -45,21 +47,29 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+            // Firebase login
             mAuth.signInWithEmailAndPassword(emailText, passwordText)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
-                            Toast.makeText(this, "Login successful", Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(MainActivity.this, InterestsActivity.class);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            startActivity(intent);
-                            finish();
+                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                            if (user != null) {
+                                String userId = user.getUid();
+                                String userEmail = user.getEmail();
+
+                                Intent intent = new Intent(MainActivity.this, InterestsActivity.class);
+                                intent.putExtra("userId", userId);
+                                intent.putExtra("userEmail", userEmail);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+                                finish();
+                            }
                         } else {
                             Toast.makeText(this, "Invalid credentials", Toast.LENGTH_SHORT).show();
                         }
                     });
         });
 
-
+        // Forgot password click
         forgotPassword.setOnClickListener(view -> {
             String emailText = email.getText().toString().trim();
 
@@ -79,7 +89,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // ✅ Sign Up click handler
     public void onSignUpClick(android.view.View view) {
-        startActivity(new Intent(this, RegisterActivity.class));
+        Intent intent = new Intent(MainActivity.this, RegisterActivity.class);
+        startActivity(intent);
     }
 }

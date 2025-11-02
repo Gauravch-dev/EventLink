@@ -10,8 +10,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class InterestsActivity extends AppCompatActivity {
+
+    private String userId;
+    private String userEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,7 +24,20 @@ public class InterestsActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false); // hide default title
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+
+        // ✅ Retrieve from Intent
+        userId = getIntent().getStringExtra("userId");
+        userEmail = getIntent().getStringExtra("userEmail");
+
+        // ✅ (Optional) Safety check in case of missing data
+        if (userEmail == null) {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser != null) {
+                userId = currentUser.getUid();
+                userEmail = currentUser.getEmail();
+            }
+        }
     }
 
     @Override
@@ -52,9 +69,9 @@ public class InterestsActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void onForyouClick(View view){
-        String userEmail = getIntent().getStringExtra("userEmail");
+    public void onForyouClick(View view) {
         Intent intent = new Intent(InterestsActivity.this, ForYouActivity.class);
+        intent.putExtra("userId", userId);
         intent.putExtra("userEmail", userEmail);
         startActivity(intent);
     }

@@ -4,12 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 public class login_phone_number extends AppCompatActivity {
-    EditText phoneInput;
-    AppCompatButton sendOtpBtn;
+
+    private EditText phoneInput;
+    private AppCompatButton sendOtpBtn;
+
+    private String eventId;
+    private String eventName;
+    private String userId;
+    private String userEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,7 +26,13 @@ public class login_phone_number extends AppCompatActivity {
         phoneInput = findViewById(R.id.phoneno);
         sendOtpBtn = findViewById(R.id.sendOTPButton);
 
-        sendOtpBtn.setOnClickListener((v) -> {
+        // ✅ Receive data from EventDescActivity
+        eventId = getIntent().getStringExtra("eventId");
+        eventName = getIntent().getStringExtra("eventName");
+        userId = getIntent().getStringExtra("userId");
+        userEmail = getIntent().getStringExtra("userEmail");
+
+        sendOtpBtn.setOnClickListener(v -> {
             String phoneNumber = phoneInput.getText().toString().trim();
 
             if (phoneNumber.isEmpty()) {
@@ -27,8 +40,14 @@ public class login_phone_number extends AppCompatActivity {
                 return;
             }
 
+            // ✅ Move to OTP screen, keeping all details
             Intent intent = new Intent(login_phone_number.this, login_otp.class);
             intent.putExtra("phone", phoneNumber);
+            intent.putExtra("eventId", eventId);
+            intent.putExtra("eventName", eventName);
+            intent.putExtra("userId", userId);
+            intent.putExtra("userEmail", userEmail);
+
             startActivity(intent);
         });
     }

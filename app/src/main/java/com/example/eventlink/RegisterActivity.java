@@ -67,6 +67,7 @@ public class RegisterActivity extends AppCompatActivity {
                         Map<String, Object> userData = new HashMap<>();
                         userData.put("name", name);
                         userData.put("email", email);
+                        userData.put("registeredEvents", new HashMap<>()); // initialize empty map
 
                         db.collection("users").document(user.getUid())
                                 .set(userData)
