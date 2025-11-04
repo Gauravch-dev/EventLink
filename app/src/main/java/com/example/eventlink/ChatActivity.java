@@ -152,6 +152,8 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -169,7 +171,6 @@ import androidx.core.app.ActivityCompat;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.CancellationTokenSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -200,6 +201,13 @@ public class ChatActivity extends AppCompatActivity {
     private BotService pendingApi;
     private String pendingApiKey;
 
+    // ===== AI ALERT CONTROL =====
+    private Handler aiAlertHandler = new Handler(Looper.getMainLooper());
+    private Runnable aiAlertRunnable;
+    private static final long AI_ALERT_DELAY = 15000; // 15 s inactivity
+    private String lastIntent = null;
+    // =============================
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -212,7 +220,6 @@ public class ChatActivity extends AppCompatActivity {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        // Load classifier
         try {
             classifier = new IntentLocalClassifier(this);
         } catch (Exception e) {
@@ -224,10 +231,7 @@ public class ChatActivity extends AppCompatActivity {
         input.setOnEditorActionListener((v, actionId, event) -> {
             boolean imeDone = actionId == EditorInfo.IME_ACTION_SEND || actionId == EditorInfo.IME_ACTION_DONE;
             boolean enter = event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN;
-            if (imeDone || enter) {
-                trySend();
-                return true;
-            }
+            if (imeDone || enter) { trySend(); return true; }
             return false;
         });
     }
@@ -251,9 +255,11 @@ public class ChatActivity extends AppCompatActivity {
             IntentLocalClassifier.Prediction r = classifier.predict(text);
             intent = r.top1;
             appendLine("[intent] " + intent + " (" + String.format("%.2f", r.top1Prob) + ")");
+            lastIntent = intent;     // remember last user topic
+            resetAIDelay();          // restart timer for AI alert
         }
 
-        Map<String, String> ctxMap = DbProvider.fetchContextForIntent(this, "u1", intent == null ? "out_of_scope" : intent);
+        Map<String,String> ctxMap = DbProvider.fetchContextForIntent(this, "u1", intent == null ? "out_of_scope" : intent);
         String systemPrompt = DbProvider.buildPrompt(intent == null ? "out_of_scope" : intent, ctxMap);
 
         BotService api = RetrofitProvider.getApi();
@@ -262,7 +268,6 @@ public class ChatActivity extends AppCompatActivity {
         String lower = text.toLowerCase();
         if (lower.contains("where am i") || lower.contains("current location") ||
                 lower.contains("my address") || lower.contains("where are we") || lower.contains("location")) {
-            // Ask for location
             fetchUserAddressAndSend(text, systemPrompt, api, apiKey);
         } else {
             GeminiRequest body = GeminiRequest.of(text, systemPrompt);
@@ -290,37 +295,27 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
-        LocationRequest locationRequest = LocationRequest.create()
+        LocationRequest req = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(1000)
                 .setFastestInterval(500)
                 .setNumUpdates(1);
 
-        fusedLocationClient.requestLocationUpdates(locationRequest, new com.google.android.gms.location.LocationCallback() {
+        fusedLocationClient.requestLocationUpdates(req, new com.google.android.gms.location.LocationCallback() {
             @Override
             public void onLocationResult(@NonNull com.google.android.gms.location.LocationResult locationResult) {
                 fusedLocationClient.removeLocationUpdates(this);
-
-                Location location = locationResult.getLastLocation();
-                if (location == null) {
+                Location loc = locationResult.getLastLocation();
+                if (loc == null) {
                     appendLine("Bot: Unable to fetch location.");
                     setSending(false);
                     return;
                 }
 
-                double lat = location.getLatitude();
-                double lon = location.getLongitude();
-
-                String address = getAddressFromLocation(location);
-
+                String address = getAddressFromLocation(loc);
                 String fullPrompt = systemPrompt +
-                        "\n\nIMPORTANT INSTRUCTION:\n" +
-                        "The user's **current real-world address** is:\n" +
-                        address + "\n\n" +
-                        "You must always use this location for any 'where am I', 'how far', or 'location-related' questions. " +
-                        "Do NOT assume or guess another city (like Bengaluru). " +
-                        "Always rely only on the above real address provided by the system.";
-
+                        "\n\nIMPORTANT INSTRUCTION:\nUser's real-world address:\n" + address +
+                        "\nAlways use this for location-related questions.";
 
                 GeminiRequest body = GeminiRequest.of(userText, fullPrompt);
                 sendToGemini(api, apiKey, body);
@@ -328,31 +323,26 @@ public class ChatActivity extends AppCompatActivity {
         }, getMainLooper());
     }
 
-
-
-    private String getAddressFromLocation(Location location) {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+    private String getAddressFromLocation(Location loc) {
+        Geocoder g = new Geocoder(this, Locale.getDefault());
         try {
-            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-            if (addresses != null && !addresses.isEmpty()) {
-                Address addr = addresses.get(0);
+            List<Address> addrs = g.getFromLocation(loc.getLatitude(), loc.getLongitude(), 1);
+            if (addrs != null && !addrs.isEmpty()) {
+                Address a = addrs.get(0);
                 StringBuilder sb = new StringBuilder();
-                for (int i = 0; i <= addr.getMaxAddressLineIndex(); i++) {
-                    sb.append(addr.getAddressLine(i));
-                    if (i < addr.getMaxAddressLineIndex()) sb.append(", ");
+                for (int i = 0; i <= a.getMaxAddressLineIndex(); i++) {
+                    sb.append(a.getAddressLine(i));
+                    if (i < a.getMaxAddressLineIndex()) sb.append(", ");
                 }
                 return sb.toString();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
         return "Address not found";
     }
 
     private void sendToGemini(BotService api, String apiKey, GeminiRequest body) {
         if (inFlight != null && !inFlight.isCanceled()) inFlight.cancel();
         inFlight = api.generateContent(MODEL, apiKey, body);
-
         inFlight.enqueue(new Callback<GeminiResponse>() {
             @Override
             public void onResponse(@NonNull Call<GeminiResponse> call, @NonNull Response<GeminiResponse> res) {
@@ -386,25 +376,22 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void scrollToBottom() {
-        if (chatScroll != null) {
-            chatScroll.post(() -> chatScroll.fullScroll(View.FOCUS_DOWN));
-        }
+        if (chatScroll != null) chatScroll.post(() -> chatScroll.fullScroll(View.FOCUS_DOWN));
     }
 
     private void hideKeyboard(View v) {
         try {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
         } catch (Exception ignored) {}
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE && waitingForLocation) {
+    public void onRequestPermissionsResult(int reqCode, @NonNull String[] perms, @NonNull int[] results) {
+        super.onRequestPermissionsResult(reqCode, perms, results);
+        if (reqCode == LOCATION_PERMISSION_REQUEST_CODE && waitingForLocation) {
             waitingForLocation = false;
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Retry sending now that permission is granted
+            if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
                 fetchUserAddressAndSend(pendingUserText, pendingSystemPrompt, pendingApi, pendingApiKey);
             } else {
                 appendLine("Bot: Location permission denied. Cannot fetch address.");
@@ -413,9 +400,29 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
+    // ========== AI ALERT DELAY HANDLER ==========
+    private void resetAIDelay() {
+        aiAlertHandler.removeCallbacksAndMessages(null);
+        aiAlertRunnable = () -> {
+            if (lastIntent != null) {
+                AIAlerter.trigger(this, lastIntent);
+                lastIntent = null;
+            }
+        };
+        aiAlertHandler.postDelayed(aiAlertRunnable, AI_ALERT_DELAY);
+    }
+    // ============================================
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (inFlight != null && !inFlight.isCanceled()) inFlight.cancel();
+
+        // fire alert on close if user just finished chatting
+        aiAlertHandler.removeCallbacksAndMessages(null);
+        if (lastIntent != null) {
+            AIAlerter.trigger(this, lastIntent);
+            lastIntent = null;
+        }
     }
 }
