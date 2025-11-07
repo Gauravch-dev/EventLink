@@ -2,29 +2,40 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="200dp"
-    android:background="@drawable/bg_gradient"
+    android:layout_height="180dp"
+    android:padding="24dp"
     android:gravity="bottom"
-    android:padding="20dp">
+    android:background="#FAFAFA">
 
+    <!-- Profile Picture Holder -->
     <ImageView
-        android:layout_width="75dp"
-        android:layout_height="75dp"
-        android:src="@drawable/blockchain" />
+        android:id="@+id/nav_header_image"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:src="@drawable/blockchain"
+        android:scaleType="centerCrop"
+        android:background="@drawable/circle_white"
+        android:padding="6dp" />
 
+    <!-- Name -->
     <TextView
         android:id="@+id/nav_header_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Gaurav"
-        android:textSize="24sp" />
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:layout_marginTop="12dp" />
 
+    <!-- Email -->
     <TextView
         android:id="@+id/nav_header_email"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="gauravlan.ch@gmail.com"
         android:textSize="14sp"
-        android:fontFamily="sans-serif-black" />
+        android:textColor="#666666"
+        android:layout_marginTop="4dp" />
 
 </LinearLayout>

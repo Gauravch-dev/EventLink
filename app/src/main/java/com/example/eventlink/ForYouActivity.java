@@ -76,8 +76,7 @@ public class ForYouActivity extends AppCompatActivity {
                     .addOnFailureListener(e ->
                             Toast.makeText(this, "Error fetching user: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                     );
-        } else {
-            Toast.makeText(this, "User not logged in properly", Toast.LENGTH_SHORT).show();
+        }
         }
 
         // ===== Image Slider =====

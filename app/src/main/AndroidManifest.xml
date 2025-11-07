@@ -25,13 +25,13 @@
 
         <activity
             android:name=".login_otp"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".login_phone_number"
             android:exported="true" />
         <activity
             android:name=".EventDescActivity"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".CreateEventActivity"
             android:exported="true" />
@@ -40,7 +40,7 @@
             android:exported="true" />
         <activity
             android:name=".InterestsActivity"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".RegisterActivity"
             android:exported="true" />

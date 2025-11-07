@@ -1,120 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center_horizontal"
-    android:background="@drawable/bg_gradient">
+    android:fillViewport="true"
+    android:background="#FFFFFF">
 
-    <!-- Toolbar with title -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:elevation="0dp">
+        android:padding="32dp">
 
         <TextView
-            android:id="@+id/toolbarTitle"
+            android:id="@+id/textTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Interests"
-            android:textSize="46sp"
+            android:text="Choose Your Interests"
+            android:textSize="32sp"
             android:textStyle="bold"
-            android:textColor="#000000" />
-    </androidx.appcompat.widget.Toolbar>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="2.5dp"
-        android:background="#000000"
-        android:layout_marginBottom="22dp" />
-
-    <!-- CheckBox rows -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp">
-
-        <CheckBox
-            android:id="@+id/checkBoxOne"
-            android:text="AI/ML"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_height="wrap_content"
             android:textColor="#000000"
-            android:layout_width="0dp"
-            android:layout_weight="1" />
+            android:layout_marginTop="20dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
-        <CheckBox
-            android:id="@+id/checkBoxTwo"
+        <TextView
+            android:id="@+id/textSubtitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Cybersecurity"
+            android:text="Select topics you're interested in to personalize your experience"
+            android:textSize="16sp"
             android:textColor="#000000"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/textTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp">
-
-        <CheckBox
-            android:id="@+id/checkBoxThree"
-            android:text="Web/App Dev"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_height="wrap_content"
-            android:textColor="#000000"
-            android:layout_width="0dp"
-            android:layout_weight="1" />
-
-        <CheckBox
-            android:id="@+id/checkBoxFour"
+        <!-- ✅ 2-column grid using Flow -->
+        <androidx.constraintlayout.helper.widget.Flow
+            android:id="@+id/interestsFlow"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="IoT/Hardware"
-            android:textSize="22sp"
-            android:textColor="#000000"
-            android:textStyle="bold" />
-    </LinearLayout>
+            app:flow_wrapMode="aligned"
+            app:flow_horizontalGap="16dp"
+            app:flow_verticalGap="16dp"
+            app:flow_maxElementsWrap="2"
+            app:constraint_referenced_ids="cardOne,cardTwo,cardThree,cardFour,cardFive,cardSix"
+            app:layout_constraintTop_toBottomOf="@id/textSubtitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="32dp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <CheckBox
-            android:id="@+id/checkBoxFive"
-            android:text="BlockChain"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_height="wrap_content"
-            android:textColor="#000000"
-            android:layout_width="0dp"
-            android:layout_weight="1" />
-
-        <CheckBox
-            android:id="@+id/checkBoxSix"
+        <!-- ✅ ROW 1 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardOne"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Cloud/Devops"
-            android:textSize="22sp"
-            android:textColor="#000000"
-            android:textStyle="bold" />
-    </LinearLayout>
+            app:cardElevation="0dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#E0E0E0"
+            app:cardBackgroundColor="#FAFAFA"
+            app:cardCornerRadius="16dp">
 
-    <!-- Submit button -->
-    <androidx.appcompat.widget.AppCompatButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Submit"
-        android:background="@drawable/btn_gradient"
-        android:onClick="onForyouClick"
-        android:layout_marginTop="10dp" />
-</LinearLayout>
+            <CheckBox
+                android:id="@+id/checkBoxOne"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="AI/ML"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:padding="20dp"
+                android:button="@null" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTwo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:cardElevation="0dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#E0E0E0"
+            app:cardBackgroundColor="#FAFAFA"
+            app:cardCornerRadius="16dp">
+
+            <CheckBox
+                android:id="@+id/checkBoxTwo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cybersecurity"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:padding="20dp"
+                android:button="@null" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ✅ ROW 2 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardThree"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:cardElevation="0dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#E0E0E0"
+            app:cardBackgroundColor="#FAFAFA"
+            app:cardCornerRadius="16dp">
+
+            <CheckBox
+                android:id="@+id/checkBoxThree"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Web/App Dev"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:padding="20dp"
+                android:button="@null" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardFour"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:cardElevation="0dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#E0E0E0"
+            app:cardBackgroundColor="#FAFAFA"
+            app:cardCornerRadius="16dp">
+
+            <CheckBox
+                android:id="@+id/checkBoxFour"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="IoT/Hardware"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:padding="20dp"
+                android:button="@null" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ✅ ROW 3 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardFive"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:cardElevation="0dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#E0E0E0"
+            app:cardBackgroundColor="#FAFAFA"
+            app:cardCornerRadius="16dp">
+
+            <CheckBox
+                android:id="@+id/checkBoxFive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Blockchain"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:padding="20dp"
+                android:button="@null" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardSix"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:cardElevation="0dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="#E0E0E0"
+            app:cardBackgroundColor="#FAFAFA"
+            app:cardCornerRadius="16dp">
+
+            <CheckBox
+                android:id="@+id/checkBoxSix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Cloud/DevOps"
+                android:textColor="#000000"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:padding="20dp"
+                android:button="@null" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Continue -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmit"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="40dp"
+            android:text="Continue"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#8B5CF6"
+            app:cornerRadius="12dp"
+            android:onClick="onForyouClick"
+            app:layout_constraintTop_toBottomOf="@id/interestsFlow"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
