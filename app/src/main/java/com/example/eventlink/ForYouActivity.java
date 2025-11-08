@@ -28,6 +28,8 @@ public class ForYouActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private String userId;
     private String userEmail;
+    private ImageSlider imageSlider;
+    private Button openChatBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,10 +79,9 @@ public class ForYouActivity extends AppCompatActivity {
                             Toast.makeText(this, "Error fetching user: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                     );
         }
-        }
 
         // ===== Image Slider =====
-        ImageSlider imageSlider = findViewById(R.id.imageSlider);
+        imageSlider = findViewById(R.id.imageSlider);
         if (imageSlider != null) {
             ArrayList<SlideModel> slideModels = new ArrayList<>();
             slideModels.add(new SlideModel(R.drawable.blockchain, ScaleTypes.FIT));
@@ -89,7 +90,6 @@ public class ForYouActivity extends AppCompatActivity {
             slideModels.add(new SlideModel(R.drawable.iot, ScaleTypes.FIT));
             imageSlider.setImageList(slideModels, ScaleTypes.FIT);
 
-            // On image click -> go to EventDescActivity with UID and email
             imageSlider.setItemClickListener(position -> {
                 Intent intent = new Intent(ForYouActivity.this, EventDescActivity.class);
                 intent.putExtra("userId", userId);
@@ -99,7 +99,7 @@ public class ForYouActivity extends AppCompatActivity {
         }
 
         // ===== Open Chat button =====
-        Button openChatBtn = findViewById(R.id.openChatBtn);
+        openChatBtn = findViewById(R.id.openChatBtn);
         if (openChatBtn != null) {
             openChatBtn.setOnClickListener(v -> {
                 Intent chatIntent = new Intent(ForYouActivity.this, ChatActivity.class);
