@@ -38,4 +38,18 @@
         android:textColor="#666666"
         android:layout_marginTop="4dp" />
 
+    <TextView
+        android:id="@+id/nav_header_interests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Your Interests: -"
+        android:textColor="#666666"
+        android:textSize="14sp"
+        android:layout_marginTop="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:ellipsize="end"
+        android:maxLines="2" />
+
+
 </LinearLayout>

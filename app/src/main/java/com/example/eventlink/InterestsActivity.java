@@ -8,6 +8,11 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.Toast;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import com.google.firebase.firestore.SetOptions;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.card.MaterialCardView;
@@ -92,7 +97,6 @@ public class InterestsActivity extends AppCompatActivity {
 
     public void onForyouClick(View view) {
         List<String> selectedInterests = new ArrayList<>();
-
         if (cb1.isChecked()) selectedInterests.add("AI/ML");
         if (cb2.isChecked()) selectedInterests.add("Cybersecurity");
         if (cb3.isChecked()) selectedInterests.add("Web/App Dev");
@@ -100,17 +104,21 @@ public class InterestsActivity extends AppCompatActivity {
         if (cb5.isChecked()) selectedInterests.add("Blockchain");
         if (cb6.isChecked()) selectedInterests.add("Cloud/DevOps");
 
+// Optional: require at least 1 interest
         if (selectedInterests.isEmpty()) {
-            Toast.makeText(this, "Please select at least 1 interest", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Pick at least one interest", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("selectedInterests", selectedInterests);
 
-        db.collection("users").document(userId)
-                .update("interests", selectedInterests)
+// Use merge() so it creates or updates safely
+        FirebaseFirestore.getInstance()
+                .collection("users").document(userId)
+                .set(userData, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
-
+                    Toast.makeText(this, "Interests updated!", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(InterestsActivity.this, ForYouActivity.class);
                     intent.putExtra("userId", userId);
                     intent.putExtra("userEmail", userEmail);
@@ -118,8 +126,7 @@ public class InterestsActivity extends AppCompatActivity {
                     finish();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to save interests", Toast.LENGTH_SHORT).show()
-                );
-    }
+                        Toast.makeText(this, "Update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );}
 
 }

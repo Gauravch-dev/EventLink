@@ -1,6 +1,10 @@
 package com.example.eventlink;
 
+import android.Manifest;
 import android.content.Context;
+
+import androidx.annotation.RequiresPermission;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -9,6 +13,7 @@ import java.util.Random;
 /** Simple AI alert generator reacting to chatbot intent classification. */
 public class AIAlerter {
 
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     public static void trigger(Context ctx, String intentLabel) {
         String message = makeMessage(intentLabel);
         NotificationUtils.notify(ctx, new Random().nextInt(9999),

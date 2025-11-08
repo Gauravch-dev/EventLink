@@ -15,6 +15,7 @@ import java.util.*;
 /**
  * TF-IDF + multinomial logistic regression (softmax) inference.
  * Tolerant loader for a variety of JSON schemas and vocab shapes.
+ * Updated for integration with IntentEvaluator rule-based logic.
  */
 public class IntentLocalClassifier {
 
@@ -27,9 +28,11 @@ public class IntentLocalClassifier {
         public final double top2Prob;
         public final double[] probs;
 
-        Prediction(String t1, double p1, String t2, double p2, double[] all) {
-            this.top1 = t1; this.top1Prob = p1;
-            this.top2 = t2; this.top2Prob = p2;
+        public Prediction(String t1, double p1, String t2, double p2, double[] all) {
+            this.top1 = t1;
+            this.top1Prob = p1;
+            this.top2 = t2;
+            this.top2Prob = p2;
             this.probs = all;
         }
     }
@@ -43,6 +46,8 @@ public class IntentLocalClassifier {
     private final int nMin, nMax;
     private final int nClasses, nFeatures;
 
+    // ------------------- Constructor -------------------
+
     public IntentLocalClassifier(Context ctx) throws Exception {
         this(ctx, "intent_model_android.json");
     }
@@ -54,7 +59,7 @@ public class IntentLocalClassifier {
         // Allow nested or flat
         JSONObject vecNode = firstNonNull(
                 root.optJSONObject("vectorizer"),
-                root.optJSONObject("tfidf"),           // some exporters wrap it like this
+                root.optJSONObject("tfidf"),
                 root.optJSONObject("vec"));
         if (vecNode == null) vecNode = root;
 
@@ -75,7 +80,7 @@ public class IntentLocalClassifier {
         for (int i = 0; i < jClasses.length(); i++) classes[i] = jClasses.getString(i);
         nClasses = classes.length;
 
-        // --- vocabulary (robust) ---
+        // --- vocabulary ---
         VocabResult vr = loadVocabulary(vecNode, root);
         this.vocab = vr.vocab;
         this.nFeatures = vr.nFeatures;
@@ -152,7 +157,7 @@ public class IntentLocalClassifier {
                 vecNode.opt("vocab"),
                 vecNode.opt("vocabulary"),
                 vecNode.opt("token2id"),
-                // some exporters: vectorizer -> vectorizer -> vocabulary
+                // nested vectorizer
                 firstNonNullObject(
                         vecNode.optJSONObject("vectorizer") != null ? vecNode.getJSONObject("vectorizer").opt("vocabulary") : null,
                         vecNode.optJSONObject("vectorizer") != null ? vecNode.getJSONObject("vectorizer").opt("vocab") : null,
@@ -164,10 +169,9 @@ public class IntentLocalClassifier {
         );
 
         if (voc == null) {
-            // Help user debug: log available keys
             Log.w(TAG, "Available keys in vectorizer: " + listKeys(vecNode));
             Log.w(TAG, "Available keys in root: " + listKeys(root));
-            throw new IllegalArgumentException("Model JSON missing vocabulary (vocab/vocabulary/token2id) in vectorizer or root.");
+            throw new IllegalArgumentException("Model JSON missing vocabulary (vocab/vocabulary/token2id).");
         }
 
         Map<String,Integer> map = new HashMap<>();
@@ -177,15 +181,13 @@ public class IntentLocalClassifier {
 
         if (voc instanceof JSONObject) {
             JSONObject o = (JSONObject) voc;
-            // Heuristic: is it token->idx OR idx->token?
-            // We'll count how many keys look like integers.
+            // check whether token->idx or idx->token
             int intLike = 0, total = 0;
             for (Iterator<String> it = o.keys(); it.hasNext();) {
                 String k = it.next(); total++;
                 if (k.matches("\\d+")) intLike++;
             }
             if (intLike > total / 2) {
-                // looks like { "0": "token", "1": "token", ... } -> invert
                 for (Iterator<String> it = o.keys(); it.hasNext();) {
                     String k = it.next();
                     int idx = Integer.parseInt(k);
@@ -193,9 +195,8 @@ public class IntentLocalClassifier {
                     map.put(token, idx);
                     if (idx > maxIdx) maxIdx = idx;
                 }
-                shape = "map(idx->token, inverted)";
+                shape = "map(idx->token,inverted)";
             } else {
-                // assume token->idx
                 for (Iterator<String> it = o.keys(); it.hasNext();) {
                     String token = it.next();
                     int idx = o.getInt(token);
@@ -208,7 +209,6 @@ public class IntentLocalClassifier {
         } else if (voc instanceof JSONArray) {
             JSONArray arr = (JSONArray) voc;
             if (arr.length() > 0 && arr.get(0) instanceof JSONArray) {
-                // shape: [ ["token", idx], ... ]
                 for (int i = 0; i < arr.length(); i++) {
                     JSONArray pair = arr.getJSONArray(i);
                     String token = pair.getString(0);
@@ -218,7 +218,6 @@ public class IntentLocalClassifier {
                 }
                 shape = "array-of-pairs";
             } else if (arr.length() > 0 && arr.get(0) instanceof String) {
-                // shape: [ "token0", "token1", ... ]  -> assign index by position
                 for (int i = 0; i < arr.length(); i++) {
                     String token = arr.getString(i);
                     map.put(token, i);
@@ -226,7 +225,6 @@ public class IntentLocalClassifier {
                 maxIdx = arr.length() - 1;
                 shape = "array-of-tokens";
             } else {
-                // Could be array of objects or numbers — unsupported
                 throw new IllegalArgumentException("Vocabulary array shape not recognized.");
             }
             source = "JSONArray";

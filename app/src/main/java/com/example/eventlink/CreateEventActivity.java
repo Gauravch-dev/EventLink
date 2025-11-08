@@ -1,12 +1,19 @@
 package com.example.eventlink;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.DatePickerDialog;
+import android.app.PendingIntent;
+import android.app.TimePickerDialog; // ⏰ NEW
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -38,6 +45,7 @@ import com.google.android.libraries.places.api.net.FetchPhotoRequest;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.storage.FirebaseStorage;
@@ -48,11 +56,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Date;
 import java.util.Map;
 
 public class CreateEventActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -63,7 +74,9 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
     private GoogleMap mMap;
     private EditText eventName, eventDescription;
     private AutoCompleteTextView searchLocation;
-    private AutoCompleteTextView domainDropdown;   // ✅ NEW FIELD
+    private AutoCompleteTextView domainDropdown;
+    private TextInputEditText editEventDate; // ✅ Date
+    private TextInputEditText editEventTime; // ⏰ NEW: Time
     private Button btnCurrentLocation, btnSearchLocation, btnPost;
     private TextView selectedLocationText;
 
@@ -76,6 +89,7 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
     private LatLng selectedLatLng;
     private String selectedAddress;
     private String selectedPlaceId;
+    private String eventTimeString = ""; // ⏰ NEW: holds picked time "HH:mm"
 
     // Autocomplete adapter
     private ArrayAdapter<String> placesAdapter;
@@ -90,7 +104,7 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
 
     // Keys
     private static final String ANDROID_PLACES_API_KEY = "AIzaSyAelpVGzYRvaDksblYvfUcLilQ2N4ETODY";
-    private static final String STATIC_MAPS_API_KEY = "AIzaSyCeW_59JNoFRUCJk1pi-uxLScHTCu68aNQ";
+    private static final String STATIC_MAPS_API_KEY   = "AIzaSyCeW_59JNoFRUCJk1pi-uxLScHTCu68aNQ";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +121,9 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
         eventName = findViewById(R.id.eventName);
         eventDescription = findViewById(R.id.eventDescription);
         searchLocation = findViewById(R.id.searchLocation);
-        domainDropdown = findViewById(R.id.domainDropdown);   // ✅ NEW FIELD
+        domainDropdown = findViewById(R.id.domainDropdown);
+        editEventDate = findViewById(R.id.editEventDate);
+        editEventTime = findViewById(R.id.editEventTime); // ⏰ NEW bind
         btnCurrentLocation = findViewById(R.id.btnCurrentLocation);
         btnSearchLocation = findViewById(R.id.btnSearchLocation);
         btnPost = findViewById(R.id.btnPost);
@@ -118,6 +134,9 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
 
         setupPlacesAutocomplete();
         setupDomainDropdown();
+        setupDatePicker();   // existing
+        setupTimePicker();   // ⏰ NEW
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         if (mapFragment != null) mapFragment.getMapAsync(this);
@@ -141,6 +160,44 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
 
         btnSearchLocation.setOnClickListener(v -> searchAndUpdateMap());
         btnPost.setOnClickListener(v -> createEvent());
+    }
+
+    // ---------- NEW: Time Picker ----------
+    private void setupTimePicker() {
+        final Calendar calendar = Calendar.getInstance();
+        editEventTime.setOnClickListener(v -> {
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(Calendar.MINUTE);
+            TimePickerDialog timePicker = new TimePickerDialog(
+                    CreateEventActivity.this,
+                    (view, selectedHour, selectedMinute) -> {
+                        eventTimeString = String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute);
+                        editEventTime.setText(eventTimeString);
+                    },
+                    hour, minute, true
+            );
+            timePicker.show();
+        });
+    }
+
+    // ---------- Date Picker (unchanged) ----------
+    private void setupDatePicker() {
+        final Calendar calendar = Calendar.getInstance();
+        editEventDate.setOnClickListener(v -> {
+            DatePickerDialog picker = new DatePickerDialog(
+                    CreateEventActivity.this,
+                    (view, year, month, dayOfMonth) -> {
+                        String selected = year + "-" +
+                                String.format(Locale.getDefault(), "%02d", (month + 1)) + "-" +
+                                String.format(Locale.getDefault(), "%02d", dayOfMonth);
+                        editEventDate.setText(selected);
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+            );
+            picker.show();
+        });
     }
 
     private void setupDomainDropdown() {
@@ -292,6 +349,16 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
     }
 
     private void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         fusedLocationClient.getLastLocation().addOnSuccessListener(loc -> {
             if (loc != null) {
                 selectedLatLng = new LatLng(loc.getLatitude(), loc.getLongitude());
@@ -397,16 +464,15 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
     private void createEvent() {
         String name = eventName.getText().toString().trim();
         String desc = eventDescription.getText().toString().trim();
-        String domain = domainDropdown.getText().toString().trim();   // ✅ NEW
+        String domain = domainDropdown.getText().toString().trim();
+        String date   = editEventDate.getText().toString().trim();
+        String time   = editEventTime.getText().toString().trim(); // ⏰ NEW read
 
         if (name.isEmpty()) { Toast.makeText(this, "Enter event name", Toast.LENGTH_SHORT).show(); return; }
         if (desc.isEmpty()) { Toast.makeText(this, "Enter description", Toast.LENGTH_SHORT).show(); return; }
-
-        // ✅ MANDATORY DOMAIN CHECK
-        if (domain.isEmpty()) {
-            Toast.makeText(this, "Please select a domain", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (domain.isEmpty()) { Toast.makeText(this, "Please select a domain", Toast.LENGTH_SHORT).show(); return; }
+        if (date.isEmpty()) { Toast.makeText(this, "Please select a date", Toast.LENGTH_SHORT).show(); return; }
+        if (time.isEmpty()) { Toast.makeText(this, "Please select a time", Toast.LENGTH_SHORT).show(); return; } // ⏰ NEW
 
         if (selectedLatLng == null) {
             Toast.makeText(this, "Pick a location", Toast.LENGTH_SHORT).show();
@@ -426,20 +492,22 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
                     Toast.makeText(this, "Image upload failed", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                saveEventToFirestore(eventId, name, desc, domain, selectedAddress,
-                        selectedLatLng, selectedPlaceId, imageUrl);
+                saveEventToFirestore(eventId, name, desc, domain, date, time,  // ⏰ pass time
+                        selectedAddress, selectedLatLng, selectedPlaceId, imageUrl);
             });
         });
     }
 
     private void saveEventToFirestore(String eventId, String name, String desc,
-                                      String domain, String addr, LatLng latLng,
+                                      String domain, String date, String time, String addr, LatLng latLng,
                                       String placeId, String imageUrl) {
 
         Map<String, Object> event = new HashMap<>();
         event.put("name", name);
         event.put("description", desc);
-        event.put("domain", domain);  // ✅ NEW FIELD SAVED
+        event.put("domain", domain);
+        event.put("date", date); // yyyy-MM-dd
+        event.put("time", time); // ⏰ HH:mm
         event.put("address", addr);
         event.put("latitude", latLng.latitude);
         event.put("longitude", latLng.longitude);
@@ -450,11 +518,71 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
         db.collection("createdEvents").document(eventId)
                 .set(event)
                 .addOnSuccessListener(a -> {
+                    // schedule reminders after saving
+                    scheduleSmartReminder(name, date, time); // ⏰ uses date + time
                     Toast.makeText(this, "✅ Event Created", Toast.LENGTH_LONG).show();
                     finish();
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "❌ Failed to save event", Toast.LENGTH_SHORT).show()
                 );
+    }
+
+    // ---------- UPDATED reminders: uses date + time ----------
+    private void scheduleSmartReminder(String eventName, String eventDateStr, String eventTimeStr) {
+        try {
+            // Combine date + time into one Date object
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+            String combined = eventDateStr + " " + (eventTimeStr == null ? "12:00" : eventTimeStr);
+            Date eventDateTime = sdf.parse(combined);
+
+            if (eventDateTime == null) {
+                Log.e(TAG, "❌ scheduleSmartReminder: eventDateTime is null");
+                return;
+            }
+
+            long eventTime = eventDateTime.getTime();
+            long now = System.currentTimeMillis();
+            long oneDayBefore   = eventTime - 24L * 60 * 60 * 1000; // 1 day before
+            long sixHoursBefore = eventTime - 6L  * 60 * 60 * 1000; // 6 hours before
+
+            Log.d(TAG, "⏰ Scheduling reminder for " + eventName + " at: " + eventDateTime);
+            Log.d(TAG, "   → OneDayBefore: " + new Date(oneDayBefore));
+            Log.d(TAG, "   → SixHoursBefore: " + new Date(sixHoursBefore));
+
+            if (oneDayBefore > now) {
+                scheduleNotification(eventName, eventDateStr + " " + eventTimeStr, oneDayBefore);
+                Log.d(TAG, "✅ Reminder set for 1 day before.");
+            } else if (sixHoursBefore > now) {
+                scheduleNotification(eventName, eventDateStr + " " + eventTimeStr, sixHoursBefore);
+                Log.d(TAG, "✅ Reminder set for 6 hours before.");
+            } else {
+                Log.d(TAG, "⚠️ Event is too close — no reminder scheduled.");
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ scheduleSmartReminder error: " + e.getMessage(), e);
+        }
+    }
+
+    @SuppressLint("ScheduleExactAlarm")
+    private void scheduleNotification(String name, String whenText, long triggerTime) {
+        Intent intent = new Intent(this, ReminderReceiver.class);
+        intent.putExtra("eventName", name);
+        intent.putExtra("eventDate", whenText); // include date + time in notification body
+
+        PendingIntent pi = PendingIntent.getBroadcast(
+                this,
+                (int) System.currentTimeMillis(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        if (alarmManager != null) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pi);
+
+
+        }
     }
 }
