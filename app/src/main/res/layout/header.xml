@@ -2,12 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="180dp"
-    android:padding="24dp"
-    android:gravity="bottom"
-    android:background="#FAFAFA">
+    android:layout_height="240dp"
+    android:paddingTop="40dp"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:background="#FFFFFF"
+    android:gravity="center_vertical">
 
-    <!-- Profile Picture Holder -->
+    <!-- Profile Picture -->
     <ImageView
         android:id="@+id/nav_header_image"
         android:layout_width="70dp"
@@ -22,7 +24,7 @@
         android:id="@+id/nav_header_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Gaurav"
+        android:text="Username"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="#000000"
@@ -33,23 +35,21 @@
         android:id="@+id/nav_header_email"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="gauravlan.ch@gmail.com"
+        android:text="email@example.com"
         android:textSize="14sp"
         android:textColor="#666666"
         android:layout_marginTop="4dp" />
 
+    <!-- Interests -->
     <TextView
         android:id="@+id/nav_header_interests"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Your Interests: -"
         android:textColor="#666666"
         android:textSize="14sp"
         android:layout_marginTop="4dp"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:ellipsize="end"
-        android:maxLines="2" />
-
+        android:maxLines="2"
+        android:ellipsize="end" />
 
 </LinearLayout>

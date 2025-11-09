@@ -40,7 +40,6 @@ public class login_phone_number extends AppCompatActivity {
                 return;
             }
 
-            // ✅ Move to OTP screen, keeping all details
             Intent intent = new Intent(login_phone_number.this, login_otp.class);
             intent.putExtra("phone", phoneNumber);
             intent.putExtra("eventId", eventId);

@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.appcompat.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/mainToolbar"
     android:layout_width="match_parent"
     android:layout_height="56dp"
     android:background="#FFFFFF"
-    android:elevation="0dp"
+    android:elevation="6dp"
+    android:titleTextColor="#000000"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:theme="@style/ThemeOverlay.AppCompat.Light" />
+    android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+    app:titleTextColor="#000000"
+    app:navigationIconTint="@android:color/black" />

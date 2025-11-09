@@ -31,10 +31,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // ✅ Initialize unified notification channel
         NotificationUtils.createChannel(this);
 
-        // ✅ Request notification permission (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -72,36 +70,41 @@ public class MainActivity extends AppCompatActivity {
 
         mAuth.signInWithEmailAndPassword(emailText, passwordText)
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                        if (user != null) {
-                            String userId = user.getUid();
-                            String userEmail = user.getEmail();
-                            FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-                            db.collection("users").document(userId).get()
-                                    .addOnSuccessListener(document -> {
-                                        Intent intent;
-                                        if (document.contains("selectedInterests"))
-                                            intent = new Intent(MainActivity.this, ForYouActivity.class);
-                                        else
-                                            intent = new Intent(MainActivity.this, InterestsActivity.class);
-
-                                        intent.putExtra("userId", userId);
-                                        intent.putExtra("userEmail", userEmail);
-                                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                        startActivity(intent);
-                                        finish();
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Intent intent = new Intent(MainActivity.this, InterestsActivity.class);
-                                        startActivity(intent);
-                                        finish();
-                                    });
-                        }
-                    } else {
+                    if (!task.isSuccessful()) {
                         Toast.makeText(this, "Invalid credentials", Toast.LENGTH_SHORT).show();
+                        return;
                     }
+
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if (user == null) return;
+
+                    String userId = user.getUid();
+                    String userEmail = user.getEmail();
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                    db.collection("users").document(userId).get()
+                            .addOnSuccessListener(document -> {
+                                Intent intent;
+
+                                if (document.contains("selectedInterests")) {
+                                    intent = new Intent(MainActivity.this, ForYouActivity.class);
+                                } else {
+                                    intent = new Intent(MainActivity.this, InterestsActivity.class);
+                                }
+
+                                intent.putExtra("userId", userId);
+                                intent.putExtra("userEmail", userEmail);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+                                finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                Intent intent = new Intent(MainActivity.this, InterestsActivity.class);
+                                intent.putExtra("userId", userId);
+                                intent.putExtra("userEmail", userEmail);
+                                startActivity(intent);
+                                finish();
+                            });
                 });
     }
 
