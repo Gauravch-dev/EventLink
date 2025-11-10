@@ -26,7 +26,6 @@ public class login_phone_number extends AppCompatActivity {
         phoneInput = findViewById(R.id.phoneno);
         sendOtpBtn = findViewById(R.id.sendOTPButton);
 
-        // ✅ Receive data from EventDescActivity
         eventId = getIntent().getStringExtra("eventId");
         eventName = getIntent().getStringExtra("eventName");
         userId = getIntent().getStringExtra("userId");

@@ -40,7 +40,6 @@ public class login_otp extends AppCompatActivity {
         nextBtn = findViewById(R.id.verifyButton);
         resendOtpTextView = findViewById(R.id.resend_otp_textview);
 
-        // ✅ Get data from previous activity
         phoneNumber = "+91" + getIntent().getStringExtra("phone");
         eventId = getIntent().getStringExtra("eventId");
         eventName = getIntent().getStringExtra("eventName");
