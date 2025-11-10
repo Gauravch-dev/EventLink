@@ -89,4 +89,9 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 });
     }
+
+    public void onLoginClick(android.view.View view) {
+        Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+        startActivity(intent);
+    }
 }
