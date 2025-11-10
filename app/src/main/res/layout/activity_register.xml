@@ -204,7 +204,8 @@
                 android:textColor="#8B5CF6"
                 android:textStyle="bold"
                 android:clickable="true"
-                android:focusable="true" />
+                android:focusable="true"
+                android:onClick="onLoginClick"/>
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
