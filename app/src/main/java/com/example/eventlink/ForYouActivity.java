@@ -24,6 +24,7 @@ import com.denzcoskun.imageslider.models.SlideModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -55,8 +56,26 @@ public class ForYouActivity extends AppCompatActivity {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         setContentView(R.layout.activity_for_you);
 
+        // ✅ MUST BE FIRST: initialize RecyclerView before calling methods on it
+        recyclerNearbyEvents = findViewById(R.id.recyclerNearbyEvents);
+        recyclerNearbyEvents.setLayoutManager(new LinearLayoutManager(this));
+        recyclerNearbyEvents.setNestedScrollingEnabled(false);  // ✅ NOW SAFE
+
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
+
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_logout) {
+                showLogoutDialog();
+                drawerLayout.closeDrawers();
+                return true;
+            }
+
+            return false;
+        });
+
         db = FirebaseFirestore.getInstance();
 
         userId = getIntent().getStringExtra("userId");
@@ -116,11 +135,23 @@ public class ForYouActivity extends AppCompatActivity {
             startActivity(chatIntent);
         });
 
-        // ✅ Setup RecyclerView
-        recyclerNearbyEvents = findViewById(R.id.recyclerNearbyEvents);
-        recyclerNearbyEvents.setLayoutManager(new LinearLayoutManager(this));
-
         refreshUserInfo();
+    }
+
+    private void showLogoutDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Logout")
+                .setMessage("Do you really want to exit?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    FirebaseAuth.getInstance().signOut();
+
+                    Intent intent = new Intent(ForYouActivity.this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                })
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     @Override
@@ -184,7 +215,7 @@ public class ForYouActivity extends AppCompatActivity {
                 .addSnapshotListener((snapshot, e) -> {
 
                     if (e != null) {
-                        Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(this, "Error loading events", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -236,6 +267,7 @@ public class ForYouActivity extends AppCompatActivity {
                         DocumentSnapshot doc = filteredDocs.get(position);
 
                         Intent intent = new Intent(ForYouActivity.this, EventDescActivity.class);
+                        intent.putExtra("eventId", doc.getId());
                         intent.putExtra("eventName", doc.getString("name"));
                         intent.putExtra("eventCategory", doc.getString("domain"));
                         intent.putExtra("eventDate", doc.getString("date"));
@@ -271,7 +303,7 @@ public class ForYouActivity extends AppCompatActivity {
                             .addOnSuccessListener(snapshot -> {
 
                                 List<DocumentSnapshot> nearbyEvents = new ArrayList<>();
-                                List<Double> distancesList = new ArrayList<>(); // ✅ NEW
+                                List<Double> distancesList = new ArrayList<>();
 
                                 for (DocumentSnapshot doc : snapshot.getDocuments()) {
 
@@ -287,16 +319,16 @@ public class ForYouActivity extends AppCompatActivity {
 
                                     double distance = distanceKm(userLat, userLng, evLat, evLng);
 
-                                    if (distance <= 2.0) {
+                                    if (distance <= 6.0) {
                                         nearbyEvents.add(doc);
-                                        distancesList.add(distance); // ✅ ADD DISTANCE
+                                        distancesList.add(distance);
                                     }
                                 }
 
                                 EventAdapter adapter = new EventAdapter(
                                         ForYouActivity.this,
                                         nearbyEvents,
-                                        distancesList, // ✅ PASS DISTANCE LIST
+                                        distancesList,
                                         userId,
                                         userEmail
                                 );

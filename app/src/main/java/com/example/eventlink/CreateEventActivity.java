@@ -201,6 +201,7 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
     }
 
     private void setupDomainDropdown() {
+        // Predefined domains (same as before)
         String[] domains = {
                 "AI/ML",
                 "Cybersecurity",
@@ -211,11 +212,18 @@ public class CreateEventActivity extends FragmentActivity implements OnMapReadyC
         };
 
         ArrayAdapter<String> domainAdapter =
-                new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, domains);
+                new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, domains);
 
         domainDropdown.setAdapter(domainAdapter);
-        domainDropdown.setThreshold(1);
+
+        // Disable typing — make it behave like a dropdown only
+        domainDropdown.setInputType(0);
+        domainDropdown.setKeyListener(null); // prevents keyboard
+        domainDropdown.setFocusable(false);
+
+        domainDropdown.setOnClickListener(v -> domainDropdown.showDropDown());
     }
+
 
     private void setupPlacesAutocomplete() {
         predictionList = new ArrayList<>();

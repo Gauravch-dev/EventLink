@@ -13,6 +13,9 @@ public class EventDescActivity extends AppCompatActivity {
     private String userId;
     private String userEmail;
 
+    private String eventId;
+    private String eventName;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -21,7 +24,9 @@ public class EventDescActivity extends AppCompatActivity {
         userId = getIntent().getStringExtra("userId");
         userEmail = getIntent().getStringExtra("userEmail");
 
-        String eventName = getIntent().getStringExtra("eventName");
+        // ✅ Receive event data dynamically
+        eventId = getIntent().getStringExtra("eventId");
+        eventName = getIntent().getStringExtra("eventName");
         String eventDescription = getIntent().getStringExtra("eventDescription");
         String eventLocation = getIntent().getStringExtra("eventLocation");
 
@@ -29,24 +34,29 @@ public class EventDescActivity extends AppCompatActivity {
         TextView desc = findViewById(R.id.eventDescription);
         TextView location = findViewById(R.id.eventLocation);
 
+        // ✅ Logs
+        Log.d("EVENT_DATA", "Received id=" + eventId);
         Log.d("EVENT_DATA", "Received name=" + eventName);
         Log.d("EVENT_DATA", "Received desc=" + eventDescription);
         Log.d("EVENT_DATA", "Received location=" + eventLocation);
 
+        // ✅ Display
         title.setText(eventName != null ? eventName : "Event");
         desc.setText(eventDescription != null ? eventDescription : "No description available");
         location.setText(eventLocation != null ? eventLocation : "Location not provided");
     }
 
+    // ✅ PASS THE SAME DYNAMIC EVENT NAME + ID
     public void onVerifyPhoneClick(View view) {
-        String eventId = "event123";
-        String eventName = "AI Workshop";
-
         Intent intent = new Intent(EventDescActivity.this, login_phone_number.class);
+
         intent.putExtra("userId", userId);
         intent.putExtra("userEmail", userEmail);
+
+        // ✅ Passing the LIVE dynamic values (NOT static!)
         intent.putExtra("eventId", eventId);
         intent.putExtra("eventName", eventName);
+
         startActivity(intent);
     }
 }

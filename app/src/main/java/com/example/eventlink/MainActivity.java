@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,11 +34,15 @@ public class MainActivity extends AppCompatActivity {
 
         NotificationUtils.createChannel(this);
 
+        // Notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        101
+                );
             }
         }
 
@@ -50,10 +55,41 @@ public class MainActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         forgotPassword = findViewById(R.id.textForgotPassword);
 
+        // ✅ Password Toggle
+        ImageView togglePassword = findViewById(R.id.imgTogglePassword);
+        togglePassword.setOnClickListener(view -> {
+            if (password.getInputType() ==
+                    (android.text.InputType.TYPE_CLASS_TEXT
+                            | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+
+                // Show password
+                password.setInputType(
+                        android.text.InputType.TYPE_CLASS_TEXT |
+                                android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                );
+                togglePassword.setImageResource(R.drawable.ic_visibility);
+
+            } else {
+
+                // Hide password
+                password.setInputType(
+                        android.text.InputType.TYPE_CLASS_TEXT |
+                                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                );
+                togglePassword.setImageResource(R.drawable.ic_visibility_off);
+            }
+
+            // Keep cursor at end
+            password.setSelection(password.getText().length());
+        });
+
+        // Buttons
         btnLogin.setOnClickListener(view -> loginUser());
         forgotPassword.setOnClickListener(view -> resetPassword());
     }
 
+
+    // ✅ LOGIN USER
     private void loginUser() {
         String emailText = email.getText().toString().trim();
         String passwordText = password.getText().toString().trim();
@@ -75,11 +111,12 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
 
-                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    FirebaseUser user = mAuth.getCurrentUser();
                     if (user == null) return;
 
                     String userId = user.getUid();
                     String userEmail = user.getEmail();
+
                     FirebaseFirestore db = FirebaseFirestore.getInstance();
 
                     db.collection("users").document(userId).get()
@@ -108,6 +145,7 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    // ✅ RESET PASSWORD
     private void resetPassword() {
         String emailText = email.getText().toString().trim();
 
